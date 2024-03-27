@@ -40,6 +40,10 @@ bool is_finish_extrinsic_parameter = false;
 bool is_read_extrinsic_from_xml = false;
 uint8_t connected_lidar_count = 0;
 
+// Lidar and host clock from last packet
+uint64_t last_packet_lidarck = 0;
+struct timespec last_packet_hostck;
+
 #define FRAME_RATE 20
 
 using namespace std::chrono;
@@ -78,12 +82,11 @@ void OnLidarErrorStatusCallback(livox_status status, uint8_t handle, ErrorMessag
 void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
 
   // Output lidar clock together with host clock
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
+  //struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &last_packet_hostck);
   uint64_t* ptr = (uint64_t*)data->timestamp;
-  uint64_t lidarck = *ptr;
-  //int64_t nsdelta = lidarck - ts.tv_nsec;
-  printf("%ld %ld %ld\n", lidarck, ts.tv_sec, ts.tv_nsec);
+  last_packet_lidarck = *ptr;
+  //printf("%ld %ld %ld\n", lidarck, ts.tv_sec, ts.tv_nsec);
 
 
   if (data) {
@@ -395,6 +398,9 @@ int main(int argc, const char *argv[]) {
 
     printf("Finish save %d frame to lvx file.\n", i);
     lvx_file_handler.SaveFrameToLvxFile(point_packet_list_temp);
+
+    // Clock information
+    printf("CK %ld %ld %ld\n", last_packet_lidarck, last_packet_hostck.tv_sec, last_packet_hostck.tv_nsec);
   }
 
   lvx_file_handler.CloseLvxFile();
