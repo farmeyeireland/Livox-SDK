@@ -76,6 +76,16 @@ void OnLidarErrorStatusCallback(livox_status status, uint8_t handle, ErrorMessag
 
 /** Receiving point cloud data from Livox LiDAR. */
 void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
+
+  // Output lidar clock together with host clock
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  uint64_t* ptr = (uint64_t*)data->timestamp;
+  uint64_t lidarck = *ptr;
+  //int64_t nsdelta = lidarck - ts.tv_nsec;
+  printf("%ld %ld %ld\n", lidarck, ts.tv_sec, ts.tv_nsec);
+
+
   if (data) {
     if (handle < connected_lidar_count && is_finish_extrinsic_parameter) {
       std::unique_lock<std::mutex> lock(mtx);
